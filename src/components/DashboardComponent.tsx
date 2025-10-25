@@ -1,136 +1,157 @@
 "use client";
 
-import Link from "next/link";
+import {
+  ConnectionProvider,
+  WalletProvider
+} from "@solana/wallet-adapter-react";
+import { WalletModalProvider } from "@solana/wallet-adapter-react-ui";
+import { useEffect, useState } from "react";
+import SendSol from "./SendSol";
+import AirdropSOl from "./AirdropSol";
+import CreateToken from "./CreateToken";
+import useWalletHook from "@/hooks/useWalletHook";
+import WalletButton from "./WalletButton";
 
-export default function Landing() {
+type ActivePage = "dashboard" | "send" | "airdrop" | "create";
+
+function DashboardContent() {
+  const [activePage, setActivePage] = useState<ActivePage>("dashboard");
+  const [balance, setBalance] = useState<number | null>(0);
+  const {wallet, connection} = useWalletHook();
+
+  const publicKey = wallet.publicKey;
+
+  useEffect(() => {
+    const fetchBalance = async () => {
+      if (!publicKey) {
+        setBalance(null);
+        return;
+      }
+      const lamports = await connection.getBalance(publicKey);
+      setBalance(lamports / 1e9);
+    };
+    fetchBalance();
+  }, [publicKey, connection]);
+
   return (
-    <div className="flex flex-col min-h-screen bg-gradient-to-br from-blue-600 to-purple-700 text-white">
-      {/* Header */}
-      <header className="flex justify-between items-center px-6 md:px-16 py-6 bg-white/10 backdrop-blur-lg border-b border-white/20">
-        <h1 className="text-2xl md:text-3xl font-bold">SolX</h1>
+    <div className="min-h-screen w-full bg-gradient-to-br from-black via-gray-900 to-blue-950 text-white flex">
+      <aside className="w-64 bg-black/40 backdrop-blur-md border-r border-white/10 flex flex-col p-6">
+        <h1
+          onClick={() => setActivePage("dashboard")}
+          className="cursor-pointer text-4xl ml-2 font-bold mb-10 bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent"
+        >
+          SolX
+        </h1>
 
-        <nav className="hidden md:flex space-x-8 text-sm font-medium">
-          <a href="#features" className="hover:text-blue-200 transition">Features</a>
-          <a href="#about" className="hover:text-blue-200 transition">About</a>
-          <a href="#contact" className="hover:text-blue-200 transition">Contact</a>
+        <nav className="flex flex-col gap-3">
+          <button
+            onClick={() => setActivePage("send")}
+            className="px-4 py-3 rounded-xl hover:bg-gradient-to-r from-blue-500 to-purple-600 transition text-left"
+          >
+            📤 Send SOL
+          </button>
+          <button
+            onClick={() => setActivePage("airdrop")}
+            className="px-4 py-3 rounded-xl hover:bg-gradient-to-r from-blue-500 to-purple-600 transition text-left"
+          >
+            🎁 Airdrop SOL
+          </button>
+          <button
+            onClick={() => setActivePage("create")}
+            className="px-4 py-3 rounded-xl hover:bg-gradient-to-r from-blue-500 to-purple-600 transition text-left"
+          >
+            🪙 Create Token
+          </button>
         </nav>
 
-        <button className="md:hidden text-2xl text-blue-200">☰</button>
-      </header>
-
-      {/* Hero Section */}
-      <section className="flex flex-col items-center text-center mt-20 px-6 md:px-20">
-        <h2 className="text-4xl md:text-6xl font-extrabold leading-tight max-w-3xl">
-          Power Your Solana Journey with{" "}
-          <span className="bg-gradient-to-r from-blue-300 to-purple-400 text-transparent bg-clip-text">
-            SolX
-          </span>
-        </h2>
-
-        <p className="mt-5 text-gray-200 text-lg max-w-2xl">
-          The ultimate toolkit to send SOL, airdrop tokens, and create your own
-          digital assets — all in one place.
-        </p>
-
-        <div className="mt-8 flex flex-wrap justify-center gap-4">
-          <Link href="/">
-            <button className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-6 py-3 rounded-md font-semibold hover:opacity-90 transition shadow-lg">
-              Get Started
-            </button>
-          </Link>
-
-          <button className="border border-white/30 px-6 py-3 rounded-md font-semibold hover:bg-white/10 transition">
-            Learn More
-          </button>
+        <div className="mt-auto text-xs text-gray-400 text-center">
+          © {new Date().getFullYear()} Solana Launchpad
         </div>
-      </section>
+      </aside>
 
-      {/* Features Section */}
-      <section
-        id="features"
-        className="mt-32 grid md:grid-cols-3 gap-10 max-w-6xl mx-auto px-6 md:px-20"
-      >
-        {[
-          {
-            title: "Send SOL Instantly",
-            desc: "Transfer SOL securely with lightning-fast transactions on the Solana blockchain.",
-          },
-          {
-            title: "Airdrop with Ease",
-            desc: "Distribute tokens effortlessly to your community or test wallets.",
-          },
-          {
-            title: "Create Custom Tokens",
-            desc: "Build and launch your own SPL tokens with just a few clicks.",
-          },
-        ].map((feature, i) => (
-          <div
-            key={i}
-            className="bg-white/10 p-8 rounded-xl border border-white/20 hover:border-white/40 transition shadow-md hover:shadow-lg"
+      <main className="flex-1 p-8 md:p-12 overflow-y-auto">
+        {activePage !== "dashboard" && (
+          <button
+            onClick={() => setActivePage("dashboard")}
+            className="mb-6 flex items-center gap-2 text-gray-400 hover:text-white transition cursor-pointer"
           >
-            <h3 className="text-xl font-semibold mb-3 bg-gradient-to-r from-blue-300 to-purple-300 text-transparent bg-clip-text">
-              {feature.title}
-            </h3>
-            <p className="text-gray-200">{feature.desc}</p>
-          </div>
-        ))}
-      </section>
-
-      {/* About Section */}
-      <section
-        id="about"
-        className="mt-32 max-w-4xl mx-auto px-6 md:px-20 text-center"
-      >
-        <h3 className="text-3xl font-bold mb-4 bg-gradient-to-r from-blue-300 to-purple-300 text-transparent bg-clip-text">
-          About SolX
-        </h3>
-        <p className="text-gray-200 leading-relaxed">
-          SolX is a next-generation Solana toolkit designed to simplify your
-          crypto experience. Whether you’re a developer testing tokens or a
-          creator building your next big project, SolX provides all the tools
-          you need in one sleek interface.
-        </p>
-      </section>
-
-      {/* Contact Section */}
-      <section
-        id="contact"
-        className="mt-32 mb-20 max-w-2xl mx-auto px-6 md:px-20 text-center"
-      >
-        <h3 className="text-3xl font-bold mb-4 bg-gradient-to-r from-blue-300 to-purple-300 text-transparent bg-clip-text">
-          Get in Touch
-        </h3>
-        <p className="text-gray-200 mb-6">
-          Have questions or want to collaborate? Reach out to us below.
-        </p>
-
-        <form className="flex flex-col gap-4">
-          <input
-            type="text"
-            placeholder="Your Name"
-            className="p-3 rounded-md bg-white/10 border border-white/20 focus:border-blue-300 outline-none placeholder-gray-300"
-          />
-          <input
-            type="email"
-            placeholder="Your Email"
-            className="p-3 rounded-md bg-white/10 border border-white/20 focus:border-blue-300 outline-none placeholder-gray-300"
-          />
-          <textarea
-            rows={4}
-            placeholder="Your Message"
-            className="p-3 rounded-md bg-white/10 border border-white/20 focus:border-blue-300 outline-none placeholder-gray-300"
-          ></textarea>
-
-          <button className="bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold py-3 rounded-md hover:opacity-90 transition shadow-lg">
-            Send Message
+            ← Back
           </button>
-        </form>
-      </section>
+        )}
 
-      {/* Footer */}
-      <footer className="text-center py-8 text-gray-200 border-t border-white/20">
-        © {new Date().getFullYear()} SolX. All rights reserved.
-      </footer>
+        {activePage === "dashboard" && (
+            <>
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10">
+                <h2 className="text-3xl md:text-4xl font-bold">
+                    Welcome back, <span className="text-blue-400">Builder 🚀</span>
+                </h2>
+                <div>
+                    <WalletButton />
+                </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+                <div className="p-6 bg-gray-900/60 rounded-2xl border border-gray-700 shadow-lg">
+                    <h3 className="text-gray-400 text-sm mb-2">Balance</h3>
+                    <p className="text-2xl font-bold">
+                    {balance !== null ? `${balance} SOL` : '0 SOL'}
+                    </p>
+                </div>
+                </div>
+
+                <h3 className="text-xl font-semibold mb-4">Quick Actions</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <button
+                    onClick={() => setActivePage("send")}
+                    className="p-6 bg-gradient-to-br from-blue-600 to-purple-700 rounded-2xl shadow-lg hover:scale-105 transform transition"
+                >
+                    <div className="text-3xl mb-3">📤</div>
+                    <h4 className="text-lg font-bold">Send SOL</h4>
+                    <p className="text-sm text-gray-300">Transfer SOL instantly.</p>
+                </button>
+
+                <button
+                    onClick={() => setActivePage("airdrop")}
+                    className="p-6 bg-gradient-to-br from-green-600 to-emerald-700 rounded-2xl shadow-lg hover:scale-105 transform transition"
+                >
+                    <div className="text-3xl mb-3">🎁</div>
+                    <h4 className="text-lg font-bold">Airdrop SOL</h4>
+                    <p className="text-sm text-gray-300">Request Devnet airdrop.</p>
+                </button>
+
+                <button
+                    onClick={() => setActivePage("create")}
+                    className="p-6 bg-gradient-to-br from-yellow-500 to-orange-600 rounded-2xl shadow-lg hover:scale-105 transform transition"
+                >
+                    <div className="text-3xl mb-3">🪙</div>
+                    <h4 className="text-lg font-bold">Create Token</h4>
+                    <p className="text-sm text-gray-300">Mint your own SPL token.</p>
+                </button>
+                </div>
+            </>
+        )}
+
+
+        {activePage === "send" && <SendSol />}
+        {activePage === "airdrop" && <AirdropSOl />}
+        {activePage === "create" && <CreateToken />}
+      </main>
     </div>
+  );
+}
+
+export default function DashboardComponent() {
+  return (
+    <ConnectionProvider endpoint={process.env.NEXT_PUBLIC_SOLANA || ""}
+      config={{
+        commitment: "confirmed",
+        disableRetryOnRateLimit: true,
+      }}>
+      <WalletProvider wallets={[]} autoConnect>
+        <WalletModalProvider>
+          <DashboardContent />
+        </WalletModalProvider>
+      </WalletProvider>
+    </ConnectionProvider>
   );
 }
